@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>图片处理器 · 反色 + 二值化（深色主题）</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, 'Roboto', sans-serif;
+            background: #0a0c12;
+            margin: 0;
+            padding: 24px 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 深色卡片 */
+        .dark-card {
+            max-width: 1300px;
+            width: 100%;
+            background: #14161f;
+            border-radius: 2rem;
+            box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.6);
+            padding: 28px 28px 36px;
+            transition: all 0.2s;
+            border: 1px solid #2a2e3d;
+        }
+
+        h1 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            margin: 0 0 6px 0;
+            background: linear-gradient(120deg, #c0e0ff, #80b4ff);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        .sub {
+            color: #9aaec5;
+            border-left: 4px solid #3a86ff;
+            padding-left: 14px;
+            margin-bottom: 28px;
+            font-size: 0.9rem;
+        }
+
+        /* 上传区 */
+        .upload-area {
+            background: #1e212d;
+            border: 2px dashed #3a4a66;
+            border-radius: 1.8rem;
+            padding: 32px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 28px;
+	    color:#ffffff;
+        }
+
+        .upload-area:hover {
+            border-color: #3a86ff;
+            background: #252a38;
+        }
+
+        .upload-icon {
+            font-size: 52px;
+            margin-bottom: 12px;
+            opacity: 0.8;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .btn-label {
+            background: #2c3e66;
+            color: white;
+            border: none;
+            padding: 10px 28px;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            display: inline-block;
+            transition: 0.2s;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-label:hover {
+            background: #3a86ff;
+            transform: scale(0.98);
+        }
+
+        /* 预览网格 */
+        .preview-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            justify-content: center;
+            margin: 28px 0 24px;
+        }
+
+        .preview-card {
+            flex: 1;
+            min-width: 260px;
+            background: #1b1e2a;
+            border-radius: 1.5rem;
+            padding: 16px;
+            text-align: center;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+            border: 1px solid #2a2e3d;
+        }
+
+        .preview-card h3 {
+            margin: 0 0 12px 0;
+            font-weight: 600;
+            color: #d6e5ff;
+        }
+
+        .image-box {
+            background: #0f111a;
+            border-radius: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            min-height: 260px;
+            position: relative;
+        }
+
+        .preview-img {
+            max-width: 100%;
+            max-height: 320px;
+            object-fit: contain;
+            display: block;
+            border-radius: 0.6rem;
+        }
+
+        .placeholder {
+            color: #6c7a96;
+            padding: 40px 20px;
+            font-size: 0.9rem;
+        }
+
+        /* 控制栏 */
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 18px;
+            margin-top: 16px;
+            margin-bottom: 20px;
+            background: #10121c;
+            padding: 14px 20px;
+            border-radius: 60px;
+	    color:#ffffff;
+        }
+
+        .switch-group {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .switch-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #1e212d;
+            padding: 6px 16px;
+            border-radius: 40px;
+        }
+
+        .switch-item label {
+            cursor: pointer;
+            font-weight: 500;
+            color: #d0e2ff;
+        }
+
+        /* 自定义 toggle 开关 */
+        .toggle {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #3a4a66;
+            transition: 0.2s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.2s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #3a86ff;
+        }
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        .control-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: #1e212d;
+            padding: 6px 16px;
+            border-radius: 40px;
+        }
+
+        select, input[type="range"] {
+            background: #0f111a;
+            border: 1px solid #3a4a66;
+            color: #eef4ff;
+            border-radius: 40px;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+
+        .threshold-value {
+            font-weight: 600;
+            background: #0f111a;
+            padding: 4px 12px;
+            border-radius: 30px;
+            min-width: 55px;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .download-btn {
+            background: #3a86ff;
+            width: 100%;
+            margin-top: 8px;
+            padding: 12px;
+            border-radius: 60px;
+            font-weight: 700;
+            border: none;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 1rem;
+        }
+
+        .download-btn:hover {
+            background: #2666d0;
+            transform: scale(0.98);
+        }
+
+        .download-btn:disabled {
+            background: #4a5a7a;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .footer-note {
+            font-size: 0.7rem;
+            text-align: center;
+            color: #6c7ea0;
+            margin-top: 28px;
+            border-top: 1px solid #262b38;
+            padding-top: 20px;
+        }
+
+        @media (max-width: 860px) {
+            .controls { flex-direction: column; align-items: stretch; border-radius: 1.5rem; }
+            .switch-group { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+<div class="dark-card">
+    <h1>🎛️ 图片处理器 · 反色 + 二值化</h1>
+    <div class="sub">独立开关 · 组合效果 · 实时预览 · 深色界面</div>
+
+    <div class="upload-area" id="uploadArea">
+        <div class="upload-icon">🖼️</div>
+        <div>点击或拖拽图片到这里</div>
+        <div style="font-size: 0.75rem; margin-top: 8px; opacity:0.7;">支持 JPG, PNG, WebP, BMP, GIF 等</div>
+        <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/bmp,image/gif" />
+        <div style="margin-top: 18px;">
+            <span class="btn-label" id="selectBtn">选择图片</span>
+        </div>
+    </div>
+
+    <!-- 双开关 + 控件 -->
+    <div class="controls">
+        <div class="switch-group">
+            <div class="switch-item">
+                <span>🔄 反色</span>
+                <label class="toggle">
+                    <input type="checkbox" id="invertToggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="switch-item">
+                <span>⚫ 二值化</span>
+                <label class="toggle">
+                    <input type="checkbox" id="binaryToggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+        <div class="control-group">
+            <span>🎚️ 阈值 (0~255)</span>
+            <input type="range" id="thresholdSlider" min="0" max="255" step="1" value="128" disabled>
+            <span id="thresholdValue" class="threshold-value">128</span>
+        </div>
+        <div class="control-group">
+            <span>📸 输出格式</span>
+            <select id="outputFormat">
+                <option value="image/png" selected>PNG (无损)</option>
+                <option value="image/jpeg">JPEG (有损)</option>
+                <option value="image/webp">WebP</option>
+            </select>
+        </div>
+        <div class="control-group" id="jpegQualityGroup" style="display: none;">
+            <span>📀 JPEG 质量</span>
+            <input type="range" id="jpegQuality" min="0.6" max="1.0" step="0.02" value="0.92">
+            <span id="qualityValue">92%</span>
+        </div>
+    </div>
+
+    <!-- 预览区：原图 + 结果图 -->
+    <div class="preview-grid">
+        <div class="preview-card">
+            <h3>📷 原始图片</h3>
+            <div class="image-box" id="originalBox">
+                <div class="placeholder">等待上传图片...</div>
+            </div>
+        </div>
+        <div class="preview-card">
+            <h3>✨ 处理结果 <span id="effectHint">(原图)</span></h3>
+            <div class="image-box" id="resultBox">
+                <div class="placeholder">组合效果预览</div>
+            </div>
+            <button id="downloadBtn" class="download-btn" disabled>⬇️ 下载当前效果</button>
+        </div>
+    </div>
+    <div class="footer-note">
+        💡 根据两个开关组合决定最终效果：<br>
+        • 仅反色 → 负片效果 &nbsp;&nbsp; • 仅二值化 → 黑白阈值 &nbsp;&nbsp; • 两者都开 → 先反色再二值化 (黑白互换)<br>
+        🎛️ 阈值只影响二值化；输出格式、JPEG质量仅对下载生效。
+    </div>
+</div>
+
+<script>
+    (function() {
+        // DOM 元素
+        const fileInput = document.getElementById('fileInput');
+        const selectBtn = document.getElementById('selectBtn');
+        const uploadArea = document.getElementById('uploadArea');
+        const originalBox = document.getElementById('originalBox');
+        const resultBox = document.getElementById('resultBox');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const invertToggle = document.getElementById('invertToggle');
+        const binaryToggle = document.getElementById('binaryToggle');
+        const thresholdSlider = document.getElementById('thresholdSlider');
+        const thresholdValueSpan = document.getElementById('thresholdValue');
+        const outputFormatSelect = document.getElementById('outputFormat');
+        const jpegQualityGroup = document.getElementById('jpegQualityGroup');
+        const jpegQualitySlider = document.getElementById('jpegQuality');
+        const qualityValueSpan = document.getElementById('qualityValue');
+        const effectHintSpan = document.getElementById('effectHint');
+
+        // 状态变量
+        let originalImage = null;          // HTMLImageElement 原图
+        let originalFile = null;            // 原始文件对象
+        let currentResultCanvas = null;      // 当前组合效果生成的canvas
+
+        // 辅助：更新阈值滑块禁用状态（二值化未启用时禁用滑块）
+        function updateThresholdSliderState() {
+            const binaryEnabled = binaryToggle.checked;
+            thresholdSlider.disabled = !binaryEnabled;
+            if (!binaryEnabled) {
+                // 视觉上淡化，但保留数值
+                thresholdSlider.style.opacity = '0.5';
+            } else {
+                thresholdSlider.style.opacity = '1';
+            }
+        }
+
+        // 监听开关变化时更新滑块状态
+        binaryToggle.addEventListener('change', () => {
+            updateThresholdSliderState();
+            refreshResult();
+        });
+        invertToggle.addEventListener('change', () => refreshResult());
+        thresholdSlider.addEventListener('input', () => {
+            const val = parseInt(thresholdSlider.value, 10);
+            thresholdValueSpan.innerText = val;
+            refreshResult();
+        });
+
+        // 输出格式相关UI
+        function toggleJpegQuality() {
+            const format = outputFormatSelect.value;
+            jpegQualityGroup.style.display = format === 'image/jpeg' ? 'flex' : 'none';
+        }
+        outputFormatSelect.addEventListener('change', () => {
+            toggleJpegQuality();
+            // 格式切换不影响预览，只影响下载
+        });
+        jpegQualitySlider.addEventListener('input', function() {
+            const val = Math.round(parseFloat(jpegQualitySlider.value) * 100);
+            qualityValueSpan.innerText = val + '%';
+        });
+        toggleJpegQuality();
+
+        // ---------- 核心图像处理函数 ----------
+        // 将原图应用反色 (返回canvas)
+        function applyInvert(imgElement) {
+            const canvas = document.createElement('canvas');
+            canvas.width = imgElement.width;
+            canvas.height = imgElement.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(imgElement, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                data[i] = 255 - data[i];
+                data[i+1] = 255 - data[i+1];
+                data[i+2] = 255 - data[i+2];
+            }
+            ctx.putImageData(imageData, 0, 0);
+            return canvas;
+        }
+
+        // 将图像canvas/Image 二值化 (基于灰度 + 阈值)，返回canvas
+        function applyBinary(source, threshold) {
+            // source 可以是 Image 或 canvas
+            const canvas = document.createElement('canvas');
+            let width, height;
+            if (source instanceof HTMLImageElement) {
+                width = source.width;
+                height = source.height;
+            } else if (source instanceof HTMLCanvasElement) {
+                width = source.width;
+                height = source.height;
+            } else {
+                throw new Error('不支持的源类型');
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(source, 0, 0, width, height);
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i+1];
+                const b = data[i+2];
+                const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+                const value = gray >= threshold ? 255 : 0;
+                data[i] = value;
+                data[i+1] = value;
+                data[i+2] = value;
+            }
+            ctx.putImageData(imageData, 0, 0);
+            return canvas;
+        }
+
+        // 组合效果: 根据开关顺序 (先反色，再二值化)
+        function generateCombinedEffect(imgElement, invertEnabled, binaryEnabled, threshold) {
+            if (!imgElement) return null;
+            let intermediate = null;
+            // 1. 如果需要反色，先生成反色canvas
+            if (invertEnabled) {
+                intermediate = applyInvert(imgElement);
+            } else {
+                // 未启用反色时，直接把原图绘制到canvas作为中间结果
+                const canvas = document.createElement('canvas');
+                canvas.width = imgElement.width;
+                canvas.height = imgElement.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(imgElement, 0, 0);
+                intermediate = canvas;
+            }
+            // 2. 如果需要二值化，对intermediate进行二值化
+            if (binaryEnabled) {
+                const binaryResult = applyBinary(intermediate, threshold);
+                return binaryResult;
+            } else {
+                return intermediate;
+            }
+        }
+
+        // 刷新预览区域 (根据当前开关和阈值)
+        async function refreshResult() {
+            if (!originalImage) {
+                // 没有图片时清空结果
+                resultBox.innerHTML = '<div class="placeholder">请先上传图片</div>';
+                currentResultCanvas = null;
+                downloadBtn.disabled = true;
+                effectHintSpan.innerText = '(无图片)';
+                return;
+            }
+
+            const invert = invertToggle.checked;
+            const binary = binaryToggle.checked;
+            let threshold = parseInt(thresholdSlider.value, 10);
+            if (isNaN(threshold)) threshold = 128;
+
+            // 生成最终 canvas
+            const resultCanvas = generateCombinedEffect(originalImage, invert, binary, threshold);
+            if (!resultCanvas) {
+                resultBox.innerHTML = '<div class="placeholder">处理失败</div>';
+                currentResultCanvas = null;
+                downloadBtn.disabled = true;
+                return;
+            }
+            currentResultCanvas = resultCanvas;
+
+            // 显示预览
+            const imgUrl = resultCanvas.toDataURL();
+            resultBox.innerHTML = '';
+            const resultImg = document.createElement('img');
+            resultImg.src = imgUrl;
+            resultImg.className = 'preview-img';
+            resultImg.alt = '处理后效果';
+            resultBox.appendChild(resultImg);
+
+            // 更新提示文字
+            if (!invert && !binary) effectHintSpan.innerText = '(原图)';
+            else if (invert && !binary) effectHintSpan.innerText = '(反色)';
+            else if (!invert && binary) effectHintSpan.innerText = `(二值化 阈值${threshold})`;
+            else effectHintSpan.innerText = `(反色 + 二值化 阈值${threshold})`;
+
+            downloadBtn.disabled = false;
+        }
+
+        // 下载最终结果 (根据输出格式 + JPEG质量)
+        function downloadResult() {
+            if (!currentResultCanvas) {
+                alert('没有可用的处理结果，请先上传图片');
+                return;
+            }
+            const format = outputFormatSelect.value;
+            let mimeType = format;
+            let extension = 'png';
+            if (format === 'image/jpeg') extension = 'jpg';
+            else if (format === 'image/png') extension = 'png';
+            else if (format === 'image/webp') extension = 'webp';
+
+            let quality = undefined;
+            if (format === 'image/jpeg') {
+                quality = parseFloat(jpegQualitySlider.value);
+                if (isNaN(quality)) quality = 0.92;
+            }
+
+            currentResultCanvas.toBlob((blob) => {
+                if (!blob) {
+                    alert('导出图片失败');
+                    return;
+                }
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                let baseName = originalFile ? originalFile.name.replace(/\.[^/.]+$/, '') : 'image';
+                // 组合效果描述
+                const invertOn = invertToggle.checked;
+                const binaryOn = binaryToggle.checked;
+                let suffix = '';
+                if (invertOn && binaryOn) suffix = '反色+二值化';
+                else if (invertOn) suffix = '反色';
+                else if (binaryOn) suffix = `二值化_阈值${thresholdSlider.value}`;
+                else suffix = '原图';
+                a.download = `${baseName}_${suffix}.${extension}`;
+                a.href = url;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, mimeType, quality);
+        }
+
+        // ---------- 处理上传图片 ----------
+        function processImage(file) {
+            if (!file || !file.type.startsWith('image/')) {
+                alert('请选择一个有效的图片文件');
+                return;
+            }
+            originalFile = file;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    originalImage = img;
+                    // 显示原图
+                    originalBox.innerHTML = '';
+                    const originalImgElement = document.createElement('img');
+                    originalImgElement.src = img.src;
+                    originalImgElement.className = 'preview-img';
+                    originalImgElement.alt = '原始图片';
+                    originalBox.appendChild(originalImgElement);
+                    // 重置开关状态默认值？可以保持原有开关设置，但刷新结果即可
+                    // 确保滑块启用/禁用状态基于当前二值化开关
+                    updateThresholdSliderState();
+                    refreshResult();
+                };
+                img.onerror = () => {
+                    alert('图片加载失败，请尝试其他格式');
+                    resetUI();
+                };
+                img.src = e.target.result;
+            };
+            reader.onerror = () => {
+                alert('文件读取失败');
+                resetUI();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function resetUI() {
+            originalImage = null;
+            originalFile = null;
+            currentResultCanvas = null;
+            originalBox.innerHTML = '<div class="placeholder">等待上传图片...</div>';
+            resultBox.innerHTML = '<div class="placeholder">组合效果预览</div>';
+            downloadBtn.disabled = true;
+            effectHintSpan.innerText = '(无图片)';
+        }
+
+        // ---------- 事件绑定 ----------
+        selectBtn.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('click', (e) => {
+            if (e.target === uploadArea || (uploadArea.contains(e.target) && !e.target.closest('#selectBtn'))) {
+                fileInput.click();
+            }
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                processImage(e.target.files[0]);
+            }
+        });
+        downloadBtn.addEventListener('click', downloadResult);
+
+        // 拖拽上传
+        function setupDragAndDrop() {
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.style.background = '#252a38';
+                uploadArea.style.borderColor = '#3a86ff';
+            });
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.style.background = '#1e212d';
+                uploadArea.style.borderColor = '#3a4a66';
+            });
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.style.background = '#1e212d';
+                const files = e.dataTransfer.files;
+                if (files.length > 0 && files[0].type.startsWith('image/')) {
+                    processImage(files[0]);
+                    fileInput.files = files;
+                } else {
+                    alert('请拖放图片文件');
+                }
+            });
+        }
+        setupDragAndDrop();
+
+        // 初始化状态
+        updateThresholdSliderState();
+        resetUI();
+    })();
+</script>
+</body>
+</html>

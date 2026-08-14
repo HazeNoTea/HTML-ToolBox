@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🚲 速度计算器 · 横向对比</title>
+    <style>
+        /* ---------- 全局重置 & 深色主题 ---------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            min-height: 100vh;
+            padding: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .app {
+            max-width: 1280px;
+            width: 100%;
+        }
+
+        /* ---------- 标题 ---------- */
+        .header {
+            margin-bottom: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #58a6ff, #f0883e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header h1 span {
+            background: none;
+            -webkit-text-fill-color: #c9d1d9;
+        }
+        .header .badge {
+            font-size: 14px;
+            background: #21262d;
+            padding: 6px 16px;
+            border-radius: 20px;
+            border: 1px solid #30363d;
+            color: #8b949e;
+        }
+
+        /* ---------- 卡片通用 ---------- */
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 16px;
+            padding: 22px 26px;
+            margin-bottom: 24px;
+            transition: border-color 0.2s;
+        }
+        .card:hover {
+            border-color: #484f58;
+        }
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #f0f6fc;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card-title .icon {
+            font-size: 20px;
+        }
+
+        /* ---------- 输入区域 ---------- */
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 14px 20px;
+            margin-bottom: 18px;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .input-group label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #8b949e;
+            letter-spacing: 0.3px;
+        }
+        .input-group input {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 16px;
+            font-weight: 500;
+            color: #f0f6fc;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            width: 100%;
+            min-width: 0;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #58a6ff;
+            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
+        }
+        .input-group input::-webkit-inner-spin-button {
+            opacity: 0.5;
+        }
+        .input-group .hint {
+            font-size: 12px;
+            color: #484f58;
+            margin-top: 2px;
+            min-height: 18px;
+        }
+        .input-group .hint .highlight {
+            color: #58a6ff;
+            font-weight: 500;
+        }
+
+        /* 预设按钮组 */
+        .preset-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .preset-btn {
+            background: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 16px;
+            padding: 4px 14px;
+            font-size: 12px;
+            color: #8b949e;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .preset-btn:hover {
+            background: #30363d;
+            color: #f0f6fc;
+            border-color: #58a6ff;
+        }
+
+        /* ---------- 结果展示 ---------- */
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 14px;
+            padding: 16px 0 6px 0;
+            border-top: 1px solid #21262d;
+            margin-top: 10px;
+        }
+        .result-item {
+            text-align: center;
+        }
+        .result-item .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #f0f6fc;
+            line-height: 1.2;
+        }
+        .result-item .value.speed {
+            color: #58a6ff;
+        }
+        .result-item .value.ratio {
+            color: #f0883e;
+        }
+        .result-item .label {
+            font-size: 12px;
+            color: #8b949e;
+            margin-top: 2px;
+        }
+        .result-item .unit {
+            font-size: 14px;
+            font-weight: 400;
+            color: #8b949e;
+            margin-left: 2px;
+        }
+
+        /* ---------- 操作按钮 ---------- */
+        .action-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 16px;
+            align-items: center;
+        }
+        .btn {
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: #238636;
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: #2ea043;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(35, 134, 54, 0.3);
+        }
+        .btn-secondary {
+            background: #21262d;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+        }
+        .btn-secondary:hover {
+            background: #30363d;
+            border-color: #484f58;
+        }
+        .btn-danger {
+            background: #da3633;
+            color: #fff;
+        }
+        .btn-danger:hover {
+            background: #f85149;
+            transform: translateY(-1px);
+        }
+        .btn-warning {
+            background: #d29922;
+            color: #fff;
+        }
+        .btn-warning:hover {
+            background: #e3b341;
+        }
+
+        /* ---------- 对比表格 ---------- */
+        .table-wrap {
+            overflow-x: auto;
+            margin-top: 4px;
+        }
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            min-width: 700px;
+        }
+        .compare-table th {
+            background: #21262d;
+            color: #8b949e;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 12px 14px;
+            text-align: center;
+            border-bottom: 2px solid #30363d;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+        .compare-table td {
+            padding: 11px 14px;
+            text-align: center;
+            border-bottom: 1px solid #21262d;
+            vertical-align: middle;
+        }
+        .compare-table tr:hover td {
+            background: #1c2128;
+        }
+        .compare-table .col-speed {
+            font-weight: 700;
+            font-size: 16px;
+            color: #58a6ff;
+        }
+        .compare-table .col-rank {
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .rank-1 {
+            color: #f0883e;
+        }
+        .rank-2 {
+            color: #d2a8ff;
+        }
+        .rank-3 {
+            color: #8b949e;
+        }
+        .compare-table .delete-btn {
+            background: none;
+            border: none;
+            color: #484f58;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .compare-table .delete-btn:hover {
+            color: #f85149;
+            background: rgba(248, 81, 73, 0.1);
+        }
+        .compare-table .empty-row td {
+            padding: 40px 0;
+            color: #484f58;
+            font-style: italic;
+        }
+
+        /* ---------- 对比控制 ---------- */
+        .compare-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            gap: 10px;
+        }
+        .compare-actions .left {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .compare-actions .count {
+            font-size: 13px;
+            color: #8b949e;
+            background: #21262d;
+            padding: 4px 14px;
+            border-radius: 20px;
+        }
+
+        /* ---------- 单位换算专用 ---------- */
+        .unit-ref {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 12px;
+            margin-top: 8px;
+            border-top: 1px solid #21262d;
+            font-size: 13px;
+            color: #8b949e;
+        }
+        .unit-ref .ref-tag {
+            background: #21262d;
+            padding: 4px 12px;
+            border-radius: 14px;
+            border: 1px solid #30363d;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .unit-ref .ref-tag strong {
+            color: #f0f6fc;
+        }
+
+        /* ---------- 响应式 ---------- */
+        @media (max-width: 640px) {
+            body {
+                padding: 12px;
+            }
+            .card {
+                padding: 16px 18px;
+            }
+            .header h1 {
+                font-size: 22px;
+            }
+            .input-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            .result-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            .result-item .value {
+                font-size: 22px;
+            }
+            .action-row .btn {
+                flex: 1 1 auto;
+                justify-content: center;
+            }
+            .compare-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .unit-ref {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
+        }
+        @media (max-width: 420px) {
+            .input-grid {
+                grid-template-columns: 1fr;
+            }
+            .result-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d1117;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #484f58;
+        }
+
+        /* 小标签 */
+        .highlight-best {
+            background: rgba(56, 139, 253, 0.12);
+            border-left: 3px solid #58a6ff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app">
+
+        <!-- ========== 头部 ========== -->
+        <header class="header">
+            <h1>🚲 速度计算器 <span>· 横向对比</span></h1>
+            <span class="badge">⚡ 齿比 · 踏频 · 轮径</span>
+        </header>
+
+        <!-- ========== 主计算卡 ========== -->
+        <section class="card" id="mainCard">
+            <div class="card-title">
+                <span class="icon">📐</span> 当前配置
+            </div>
+
+            <!-- 输入 -->
+            <div class="input-grid">
+                <div class="input-group">
+                    <label>轮组尺寸 (英寸)</label>
+                    <input type="number" id="wheelSize" value="16" step="0.5" min="10" max="30" />
+                    <div class="hint">如 16、20、26</div>
+                </div>
+                <div class="input-group">
+                    <label>轮胎宽度 (英寸)</label>
+                    <input type="number" id="tireWidth" value="2.125" step="0.125" min="0.8" max="3.0" />
+                    <div class="hint">如 1.95、2.125</div>
+                </div>
+                <div class="input-group">
+                    <label>牙盘齿数</label>
+                    <input type="number" id="chainring" value="52" step="1" min="20" max="70" />
+                </div>
+                <div class="input-group">
+                    <label>飞轮齿数</label>
+                    <input type="number" id="cog" value="14" step="1" min="8" max="40" />
+                </div>
+                <div class="input-group">
+                    <label>踏频 (RPM)</label>
+                    <input type="number" id="cadence" value="90" step="5" min="30" max="160" />
+                    <div class="hint">70 休闲 · 90 巡航 · 110 冲刺</div>
+                </div>
+            </div>
+
+            <!-- 预设 -->
+            <div class="preset-group">
+                <span style="font-size:13px;color:#8b949e;margin-right:6px;">快速预设：</span>
+                <button class="preset-btn" data-w="16" data-t="2.125">16×2.125</button>
+                <button class="preset-btn" data-w="16" data-t="1.75">16×1.75</button>
+                <button class="preset-btn" data-w="20" data-t="1.95">20×1.95</button>
+                <button class="preset-btn" data-w="20" data-t="2.125">20×2.125</button>
+                <button class="preset-btn" data-w="26" data-t="1.95">26×1.95</button>
+                <button class="preset-btn" data-w="14" data-t="1.5">14×1.5</button>
+                <button class="preset-btn" data-w="18" data-t="1.75">18×1.75</button>
+            </div>
+
+            <!-- 结果 -->
+            <div class="result-grid">
+                <div class="result-item">
+                    <div class="value speed" id="resultSpeed">--</div>
+                    <div class="label">速度 <span class="unit">km/h</span></div>
+                </div>
+                <div class="result-item">
+                    <div class="value ratio" id="resultRatio">--</div>
+                    <div class="label">齿比</div>
+                </div>
+                <div class="result-item">
+                    <div class="value" id="resultCirc" style="color:#7ee787;">--</div>
+                    <div class="label">轮胎周长 <span class="unit">m</span></div>
+                </div>
+                <div class="result-item">
+                    <div class="value" id="resultRpm" style="color:#d2a8ff;">--</div>
+                    <div class="label">轮速 <span class="unit">RPM</span></div>
+                </div>
+            </div>
+
+            <!-- 操作 -->
+            <div class="action-row">
+                <button class="btn btn-primary" id="addBtn">➕ 加入对比</button>
+                <button class="btn btn-secondary" id="resetBtn">↺ 重置默认</button>
+                <span style="font-size:13px;color:#484f58;margin-left:auto;" id="statusMsg">就绪</span>
+            </div>
+        </section>
+
+        <!-- ========== 单位换算卡 (新增) ========== -->
+        <section class="card" id="unitConverter">
+            <div class="card-title">
+                <span class="icon">📏</span> 单位换算 · 英寸 ⇄ 公制 (ISO / 700c)
+            </div>
+            <div class="input-grid">
+                <div class="input-group">
+                    <label>轮圈直径 (英寸)</label>
+                    <input type="number" id="unitWheelInch" value="16" step="0.5" min="10" max="40" />
+                    <div class="hint" id="unitWheelResult">≈ <span class="highlight">406</span> mm (ISO) · 对应 16" 轮圈</div>
+                </div>
+                <div class="input-group">
+                    <label>轮胎宽度 (英寸)</label>
+                    <input type="number" id="unitTireInch" value="2.125" step="0.125" min="0.5" max="5" />
+                    <div class="hint" id="unitTireResult">≈ <span class="highlight">54</span> mm · 约 <span class="highlight">54c</span> (公路车宽度参考)</div>
+                </div>
+            </div>
+            <div class="unit-ref">
+                <span>📌 快速对照：</span>
+                <span class="ref-tag"><strong>16"</strong> = 406 mm</span>
+                <span class="ref-tag"><strong>20"</strong> = 451 mm</span>
+                <span class="ref-tag"><strong>26"</strong> = 559 mm</span>
+                <span class="ref-tag"><strong>27.5"</strong> = 584 mm (650B)</span>
+                <span class="ref-tag"><strong>29"</strong> = 622 mm (700C)</span>
+                <span style="margin-left:auto;">1 英寸 = 25.4 毫米</span>
+            </div>
+        </section>
+
+        <!-- ========== 对比区 ========== -->
+        <section class="card" id="compareCard">
+            <div class="card-title">
+                <span class="icon">📊</span> 横向对比
+                <span class="count" id="countBadge">0 个配置</span>
+            </div>
+
+            <div class="compare-actions">
+                <div class="left">
+                    <button class="btn btn-danger" id="clearAllBtn">🗑 清空全部</button>
+                    <button class="btn btn-secondary" id="exportBtn">📋 导出摘要</button>
+                </div>
+                <span style="font-size:13px;color:#484f58;">💡 点击表格行可加载到上方编辑</span>
+            </div>
+
+            <div class="table-wrap">
+                <table class="compare-table" id="compareTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>轮组</th>
+                            <th>轮胎</th>
+                            <th>牙盘</th>
+                            <th>飞轮</th>
+                            <th>踏频</th>
+                            <th>齿比</th>
+                            <th>周长 (m)</th>
+                            <th>速度 (km/h)</th>
+                            <th>排名</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="compareBody">
+                        <tr class="empty-row">
+                            <td colspan="11">暂无对比数据，请添加配置</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ========== 页脚 ========== -->
+        <footer style="text-align:center;font-size:13px;color:#484f58;padding:12px 0 4px;">
+            速度 = 踏频 × 齿比 × 轮胎周长 × 60 ÷ 1000 &nbsp;·&nbsp; 扁平比 0.85
+        </footer>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ---------- DOM 引用 ----------
+            const wheelInput = document.getElementById('wheelSize');
+            const tireInput = document.getElementById('tireWidth');
+            const chainringInput = document.getElementById('chainring');
+            const cogInput = document.getElementById('cog');
+            const cadenceInput = document.getElementById('cadence');
+
+            const speedEl = document.getElementById('resultSpeed');
+            const ratioEl = document.getElementById('resultRatio');
+            const circEl = document.getElementById('resultCirc');
+            const rpmEl = document.getElementById('resultRpm');
+            const statusMsg = document.getElementById('statusMsg');
+            const countBadge = document.getElementById('countBadge');
+
+            const addBtn = document.getElementById('addBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const clearAllBtn = document.getElementById('clearAllBtn');
+            const exportBtn = document.getElementById('exportBtn');
+            const tbody = document.getElementById('compareBody');
+
+            // 单位换算元素
+            const unitWheel = document.getElementById('unitWheelInch');
+            const unitTire = document.getElementById('unitTireInch');
+            const unitWheelResult = document.getElementById('unitWheelResult');
+            const unitTireResult = document.getElementById('unitTireResult');
+
+            // ---------- 状态 ----------
+            let compareList = [];
+            let idCounter = 0;
+
+            // ---------- 工具函数 ----------
+            function getVal(el) { return parseFloat(el.value) || 0; }
+
+            // 计算轮胎周长 (米)
+            function calcCircumference(wheelInch, tireInch, flatRatio = 0.85) {
+                const wheelMM = wheelInch * 25.4;
+                const tireHeightMM = tireInch * 25.4 * flatRatio;
+                const outerMM = wheelMM + 2 * tireHeightMM;
+                return (outerMM * Math.PI) / 1000;
+            }
+
+            // 计算速度
+            function calcSpeed(chainring, cog, cadence, circM) {
+                if (cog <= 0 || chainring <= 0 || cadence <= 0 || circM <= 0) return 0;
+                const ratio = chainring / cog;
+                return cadence * ratio * circM * 60 / 1000;
+            }
+
+            // 计算当前配置的所有结果
+            function computeCurrent() {
+                const w = getVal(wheelInput);
+                const t = getVal(tireInput);
+                const cr = getVal(chainringInput);
+                const cg = getVal(cogInput);
+                const cad = getVal(cadenceInput);
+
+                if (w <= 0 || t <= 0 || cr <= 0 || cg <= 0 || cad <= 0) {
+                    speedEl.textContent = '--';
+                    ratioEl.textContent = '--';
+                    circEl.textContent = '--';
+                    rpmEl.textContent = '--';
+                    return null;
+                }
+
+                const circ = calcCircumference(w, t);
+                const ratio = cr / cg;
+                const speed = calcSpeed(cr, cg, cad, circ);
+                const wheelRpm = cad * ratio;
+
+                speedEl.textContent = speed.toFixed(1);
+                ratioEl.textContent = ratio.toFixed(2);
+                circEl.textContent = circ.toFixed(3);
+                rpmEl.textContent = wheelRpm.toFixed(0);
+
+                return { wheel: w, tire: t, chainring: cr, cog: cg, cadence: cad, circ, ratio, speed };
+            }
+
+            // 生成配置对象
+            function buildConfig(w, t, cr, cg, cad) {
+                const circ = calcCircumference(w, t);
+                const ratio = cr / cg;
+                const speed = calcSpeed(cr, cg, cad, circ);
+                return {
+                    id: ++idCounter,
+                    wheel: w,
+                    tire: t,
+                    chainring: cr,
+                    cog: cg,
+                    cadence: cad,
+                    circ: circ,
+                    ratio: ratio,
+                    speed: speed
+                };
+            }
+
+            // ---------- 单位换算 ----------
+            function convertUnits() {
+                const w = parseFloat(unitWheel.value) || 0;
+                const t = parseFloat(unitTire.value) || 0;
+
+                if (w > 0) {
+                    const mm = w * 25.4;
+                    // 映射常见规格
+                    let label = `${w}" 轮圈`;
+                    if (Math.abs(mm - 622) < 1) label = `${w}" (700C)`;
+                    else if (Math.abs(mm - 584) < 1) label = `${w}" (650B)`;
+                    else if (Math.abs(mm - 559) < 1) label = `${w}" (26" MTB)`;
+                    else if (Math.abs(mm - 451) < 1) label = `${w}" (20" 小径)`;
+                    else if (Math.abs(mm - 406) < 1) label = `${w}" (16" 折叠/BMX)`;
+                    unitWheelResult.innerHTML = `≈ <span class="highlight">${mm.toFixed(0)}</span> mm (ISO) · 对应 ${label}`;
+                } else {
+                    unitWheelResult.innerHTML = '请输入有效轮径';
+                }
+
+                if (t > 0) {
+                    const mm = t * 25.4;
+                    const cValue = Math.round(mm);
+                    unitTireResult.innerHTML =
+                        `≈ <span class="highlight">${mm.toFixed(0)}</span> mm · 约 <span class="highlight">${cValue}c</span> (公路车宽度参考)`;
+                } else {
+                    unitTireResult.innerHTML = '请输入有效胎宽';
+                }
+            }
+
+            // ---------- 渲染对比表格 ----------
+            function renderCompare() {
+                if (compareList.length === 0) {
+                    tbody.innerHTML = `<tr class="empty-row"><td colspan="11">暂无对比数据，请添加配置</td></tr>`;
+                    countBadge.textContent = '0 个配置';
+                    return;
+                }
+
+                const sorted = [...compareList].sort((a, b) => b.speed - a.speed);
+                const rankMap = new Map();
+                sorted.forEach((item, idx) => {
+                    rankMap.set(item.id, idx + 1);
+                });
+
+                let html = '';
+                compareList.forEach((cfg, index) => {
+                    const rank = rankMap.get(cfg.id) || '-';
+                    let rankClass = '';
+                    let rankLabel = rank;
+                    if (rank === 1) { rankClass = 'rank-1';
+                        rankLabel = '🥇'; } else if (rank === 2) { rankClass = 'rank-2';
+                        rankLabel = '🥈'; } else if (rank === 3) { rankClass = 'rank-3';
+                        rankLabel = '🥉'; }
+
+                    const isBest = (rank === 1 && compareList.length > 1);
+                    const rowClass = isBest ? 'highlight-best' : '';
+
+                    html += `
+                            <tr class="${rowClass}" data-id="${cfg.id}">
+                                <td>${index + 1}</td>
+                                <td>${cfg.wheel}"</td>
+                                <td>${cfg.tire}"</td>
+                                <td>${cfg.chainring}T</td>
+                                <td>${cfg.cog}T</td>
+                                <td>${cfg.cadence} RPM</td>
+                                <td>${cfg.ratio.toFixed(2)}</td>
+                                <td>${cfg.circ.toFixed(3)}</td>
+                                <td class="col-speed">${cfg.speed.toFixed(1)}</td>
+                                <td class="col-rank ${rankClass}">${rankLabel}</td>
+                                <td>
+                                    <button class="delete-btn" data-id="${cfg.id}" title="删除">✕</button>
+                                </td>
+                            </tr>
+                        `;
+                });
+
+                tbody.innerHTML = html;
+                countBadge.textContent = `${compareList.length} 个配置`;
+
+                tbody.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const id = parseInt(this.dataset.id);
+                        deleteCompare(id);
+                    });
+                });
+
+                tbody.querySelectorAll('tr[data-id]').forEach(tr => {
+                    tr.style.cursor = 'pointer';
+                    tr.addEventListener('click', function() {
+                        const id = parseInt(this.dataset.id);
+                        const cfg = compareList.find(c => c.id === id);
+                        if (cfg) loadToInput(cfg);
+                    });
+                });
+            }
+
+            // ---------- 增删改查 ----------
+            function addCompare(cfg) {
+                compareList.push(cfg);
+                renderCompare();
+                statusMsg.textContent = '✅ 已添加到对比';
+                setTimeout(() => { statusMsg.textContent = '就绪'; }, 1500);
+                saveToStorage();
+            }
+
+            function deleteCompare(id) {
+                compareList = compareList.filter(c => c.id !== id);
+                renderCompare();
+                saveToStorage();
+                statusMsg.textContent = '🗑 已删除';
+                setTimeout(() => { statusMsg.textContent = '就绪'; }, 1000);
+            }
+
+            function clearAllCompare() {
+                if (compareList.length === 0) return;
+                if (!confirm('确定要清空所有对比配置吗？')) return;
+                compareList = [];
+                renderCompare();
+                saveToStorage();
+                statusMsg.textContent = '🗑 已清空';
+                setTimeout(() => { statusMsg.textContent = '就绪'; }, 1000);
+            }
+
+            // ---------- 加载配置到输入 ----------
+            function loadToInput(cfg) {
+                wheelInput.value = cfg.wheel;
+                tireInput.value = cfg.tire;
+                chainringInput.value = cfg.chainring;
+                cogInput.value = cfg.cog;
+                cadenceInput.value = cfg.cadence;
+                computeCurrent();
+                // 同步单位换算
+                unitWheel.value = cfg.wheel;
+                unitTire.value = cfg.tire;
+                convertUnits();
+                statusMsg.textContent = `📂 已加载 #${cfg.id}`;
+                setTimeout(() => { statusMsg.textContent = '就绪'; }, 1500);
+                document.getElementById('mainCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            // ---------- 本地存储 ----------
+            function saveToStorage() {
+                try {
+                    localStorage.setItem('bikeSpeedCompare', JSON.stringify(compareList));
+                    localStorage.setItem('bikeSpeedIdCounter', String(idCounter));
+                } catch (_) {}
+            }
+
+            function loadFromStorage() {
+                try {
+                    const data = localStorage.getItem('bikeSpeedCompare');
+                    const counter = localStorage.getItem('bikeSpeedIdCounter');
+                    if (data) {
+                        compareList = JSON.parse(data);
+                        idCounter = counter ? parseInt(counter) : compareList.reduce((max, c) => Math.max(max, c.id || 0),
+                            0);
+                        compareList = compareList.filter(c => c && typeof c === 'object');
+                        renderCompare();
+                    }
+                } catch (_) {}
+            }
+
+            // ---------- 导出摘要 ----------
+            function exportSummary() {
+                if (compareList.length === 0) {
+                    alert('暂无对比数据可导出。');
+                    return;
+                }
+                const sorted = [...compareList].sort((a, b) => b.speed - a.speed);
+                let text = '🚲 速度对比摘要\n';
+                text += '═'.repeat(50) + '\n';
+                sorted.forEach((cfg, idx) => {
+                    const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx+1}`;
+                    text +=
+                        `${medal}  ${cfg.wheel}×${cfg.tire}  |  ${cfg.chainring}T / ${cfg.cog}T  |  ${cfg.cadence}RPM  →  ${cfg.speed.toFixed(1)} km/h\n`;
+                });
+                text += '═'.repeat(50) + '\n';
+                text += `总计 ${compareList.length} 个配置`;
+
+                navigator.clipboard.writeText(text).then(() => {
+                    statusMsg.textContent = '📋 摘要已复制到剪贴板';
+                    setTimeout(() => { statusMsg.textContent = '就绪'; }, 2000);
+                }).catch(() => {
+                    prompt('复制以下摘要：', text);
+                    statusMsg.textContent = '📋 已弹出摘要';
+                    setTimeout(() => { statusMsg.textContent = '就绪'; }, 1500);
+                });
+            }
+
+            // ---------- 重置默认 ----------
+            function resetDefaults() {
+                wheelInput.value = 16;
+                tireInput.value = 2.125;
+                chainringInput.value = 52;
+                cogInput.value = 14;
+                cadenceInput.value = 90;
+                computeCurrent();
+                // 同步单位换算
+                unitWheel.value = 16;
+                unitTire.value = 2.125;
+                convertUnits();
+                statusMsg.textContent = '↺ 已重置';
+                setTimeout(() => { statusMsg.textContent = '就绪'; }, 1000);
+            }
+
+            // ---------- 事件绑定 ----------
+            // 主计算
+            [wheelInput, tireInput, chainringInput, cogInput, cadenceInput].forEach(el => {
+                el.addEventListener('input', function() {
+                    computeCurrent();
+                    // 同步单位换算的数值
+                    const w = parseFloat(wheelInput.value);
+                    const t = parseFloat(tireInput.value);
+                    if (!isNaN(w) && w > 0) unitWheel.value = w;
+                    if (!isNaN(t) && t > 0) unitTire.value = t;
+                    convertUnits();
+                });
+                el.addEventListener('change', computeCurrent);
+            });
+
+            // 单位换算独立输入（反向同步）
+            unitWheel.addEventListener('input', function() {
+                convertUnits();
+                const w = parseFloat(unitWheel.value);
+                if (!isNaN(w) && w > 0) {
+                    wheelInput.value = w;
+                    computeCurrent();
+                }
+            });
+            unitTire.addEventListener('input', function() {
+                convertUnits();
+                const t = parseFloat(unitTire.value);
+                if (!isNaN(t) && t > 0) {
+                    tireInput.value = t;
+                    computeCurrent();
+                }
+            });
+
+            // 预设按钮
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const w = parseFloat(this.dataset.w);
+                    const t = parseFloat(this.dataset.t);
+                    if (w > 0 && t > 0) {
+                        wheelInput.value = w;
+                        tireInput.value = t;
+                        unitWheel.value = w;
+                        unitTire.value = t;
+                        computeCurrent();
+                        convertUnits();
+                        statusMsg.textContent = `📌 已设为 ${w}×${t}`;
+                        setTimeout(() => { statusMsg.textContent = '就绪'; }, 1200);
+                    }
+                });
+            });
+
+            addBtn.addEventListener('click', function() {
+                const w = getVal(wheelInput);
+                const t = getVal(tireInput);
+                const cr = getVal(chainringInput);
+                const cg = getVal(cogInput);
+                const cad = getVal(cadenceInput);
+                if (w <= 0 || t <= 0 || cr <= 0 || cg <= 0 || cad <= 0) {
+                    statusMsg.textContent = '⚠️ 请填写完整有效参数';
+                    return;
+                }
+                const cfg = buildConfig(w, t, cr, cg, cad);
+                addCompare(cfg);
+            });
+
+            resetBtn.addEventListener('click', resetDefaults);
+            clearAllBtn.addEventListener('click', clearAllCompare);
+            exportBtn.addEventListener('click', exportSummary);
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+                    e.preventDefault();
+                    addBtn.click();
+                }
+            });
+
+            // ---------- 初始化 ----------
+            loadFromStorage();
+            computeCurrent();
+            convertUnits(); // 初始化单位换算显示
+
+            if (compareList.length === 0) {
+                const demo = buildConfig(16, 2.125, 52, 14, 90);
+                compareList.push(demo);
+                renderCompare();
+                saveToStorage();
+            }
+
+        })();
+    </script>
+
+</body>
+</html>

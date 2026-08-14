@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>CSV赞助名单处理器 | 匿名统计 + 每50人拆分TXT文件（export default格式）</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+        body {
+            background: #eef2f5;
+            margin: 0;
+            padding: 2rem 1.5rem;
+        }
+        .app-container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        .card {
+            background: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        .card-header {
+            padding: 1.2rem 1.8rem;
+            background: #fafcff;
+            border-bottom: 1px solid #e9edf2;
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .upload-area {
+            background: #f8fafd;
+            border: 2px dashed #cbd5e1;
+            border-radius: 1.25rem;
+            margin: 1.2rem 1.8rem;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .upload-area:hover {
+            background: #f1f5f9;
+            border-color: #3b82f6;
+        }
+        .upload-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #2563eb;
+            color: white;
+            padding: 0.6rem 1.4rem;
+            border-radius: 2rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .upload-label:hover {
+            background: #1d4ed8;
+        }
+        .encoding-bar {
+            background: #f9fbfe;
+            padding: 0.7rem 1.8rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #e2e8f0;
+            gap: 0.8rem;
+        }
+        .encoding-select {
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 2rem;
+            padding: 0.3rem 0.8rem;
+            font-size: 0.8rem;
+        }
+        .btn-reparse {
+            background: #334155;
+            border: none;
+            color: white;
+            border-radius: 2rem;
+            padding: 0.3rem 1rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        .stats-bar {
+            background: #f1f5f9;
+            padding: 0.7rem 1.8rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            border-bottom: 1px solid #e2e8f0;
+            color: #0f172a;
+        }
+        .group-grid {
+            padding: 1.2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .scheme-card {
+            background: #ffffff;
+            border: 1px solid #eef2f8;
+            border-radius: 1.2rem;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        }
+        .scheme-header {
+            background: #f9fbfe;
+            padding: 1rem 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            justify-content: space-between;
+            border-bottom: 1px solid #eef2f6;
+        }
+        .scheme-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #0f172a;
+            word-break: break-word;
+        }
+        .scheme-stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.75rem;
+            background: #eef2ff;
+            padding: 0.2rem 0.8rem;
+            border-radius: 2rem;
+            color: #1e40af;
+        }
+        .export-buttons {
+            display: flex;
+            gap: 0.7rem;
+        }
+        .btn-sm {
+            background: white;
+            border: 1px solid #cbd5e1;
+            padding: 0.3rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.1s;
+            color: #1e293b;
+        }
+        .btn-primary-sm {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: white;
+        }
+        .btn-primary-sm:hover {
+            background: #1d4ed8;
+        }
+        .btn-sm:hover {
+            background: #eef2ff;
+        }
+        .table-responsive {
+            overflow-x: auto;
+            padding: 0 0.2rem;
+        }
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .user-table th {
+            text-align: left;
+            padding: 0.7rem 1rem;
+            background: #f8fafc;
+            font-weight: 600;
+            color: #334155;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .user-table td {
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid #f0f2f5;
+            color: #1e293b;
+        }
+        .user-table tr:hover td {
+            background: #fafcff;
+        }
+        .anonymous-row {
+            background: #fef9e3;
+            font-weight: 500;
+        }
+        .empty-row {
+            text-align: center;
+            padding: 2rem;
+            color: #94a3b8;
+        }
+        .badge {
+            background: #e2e8f0;
+            border-radius: 1rem;
+            padding: 0.2rem 0.6rem;
+            font-size: 0.7rem;
+        }
+        .error-toast {
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 0.6rem 1.2rem;
+            border-radius: 2rem;
+            margin: 0.5rem 1.8rem;
+            font-size: 0.8rem;
+        }
+        footer {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #62748c;
+            margin-top: 1rem;
+        }
+        button {
+            background: none;
+            border: none;
+        }
+        .info-note {
+            background: #eef2ff;
+            border-radius: 1rem;
+            padding: 0.3rem 0.8rem;
+            font-size: 0.7rem;
+            color: #1e40af;
+        }
+        .download-tip {
+            background: #fef9c3;
+            padding: 0.4rem 0.8rem;
+            border-radius: 2rem;
+            font-size: 0.7rem;
+            margin-left: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="card">
+        <div class="card-header">
+            📊 CSV赞助名单处理器
+            <div class="info-note">✨ 匿名赞助者合并+人数统计 | 每50人拆分为TXT文件（export default格式）</div>
+        </div>
+        <div class="upload-area" id="uploadZone">
+            <div>
+                <label class="upload-label">
+                    📂 选择 CSV 文件
+                    <input type="file" id="csvFileInput" accept=".csv, .text/csv, .CSV" style="display: none;">
+                </label>
+                <div class="file-info" style="margin-top: 0.6rem;">拖拽文件至此区域，或点击上传。<br>支持 UTF-8 / GBK / GB18030 编码</div>
+            </div>
+        </div>
+        <div class="encoding-bar">
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <span style="font-size:0.8rem;">🔤 文件编码：</span>
+                <select id="encodingSelect" class="encoding-select">
+                    <option value="UTF-8">UTF-8</option>
+                    <option value="GBK" selected>GBK (简体中文)</option>
+                    <option value="GB18030">GB18030</option>
+                </select>
+                <button id="reparseBtn" class="btn-reparse">🔄 重新解析（切换编码后点此）</button>
+            </div>
+            <div style="font-size:0.7rem; color:#4b5563;">💡 规则：空方案→自选赞助；爱发电用户→匿名赞助者(合并+统计人数)；金额降序排列；匿名者在末尾；每50人拆分为一个TXT文件，内容为 export default [...]</div>
+        </div>
+        <div id="globalStats" class="stats-bar" style="display: none;">
+            <span>📄 文件名: --</span>
+            <span>📋 有效方案数: --</span>
+            <span>👥 总赞助人次: --</span>
+            <span>💰 总金额: --</span>
+        </div>
+        <div id="resultContainer" class="group-grid">
+            <div class="empty-row">✨ 请上传CSV文件，将自动按「方案名称」分组，合并匿名赞助者，并按金额排序展示，支持导出TXT文件（每50人一份，export default格式）。</div>
+        </div>
+    </div>
+    <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-bottom: 1rem;">
+        <button id="exportAllBtn" class="btn-sm btn-primary-sm" style="background:#2c3e66;">📦 逐个导出所有方案的全部TXT文件</button>
+        <div class="download-tip">⚠️ 多个文件将依次下载，如被浏览器拦截请允许弹窗</div>
+    </div>
+    <footer>
+        ✅ 匿名赞助者统计原始人数，展示为“匿名赞助者 (共X人)”<br>
+        ✅ 导出格式：export default ['名称1', '名称2', ...] ，每文件最多50人，文件名“方案名称+名单+序号.txt”<br>
+        ✅ 点击按钮后会逐个下载文件（间隔0.5秒），请保持浏览器允许此站点下载多个文件
+    </footer>
+</div>
+
+<script>
+    // DOM 元素
+    const fileInput = document.getElementById('csvFileInput');
+    const uploadZone = document.getElementById('uploadZone');
+    const encodingSelect = document.getElementById('encodingSelect');
+    const reparseBtn = document.getElementById('reparseBtn');
+    const globalStatsDiv = document.getElementById('globalStats');
+    const resultContainer = document.getElementById('resultContainer');
+    const exportAllBtn = document.getElementById('exportAllBtn');
+
+    // 全局存储: Map<方案名称, { totalAmount, userCount, anonymousCount, normalUsers, anonymousInfo }>
+    let currentProcessedData = new Map();
+    let currentFileName = "";
+    let currentRawFile = null;
+
+    function showError(msg) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-toast';
+        errorDiv.innerText = `⚠️ ${msg}`;
+        const container = document.querySelector('.card');
+        const oldErr = container.querySelector('.error-toast');
+        if(oldErr) oldErr.remove();
+        container.insertBefore(errorDiv, document.getElementById('globalStats'));
+        setTimeout(() => errorDiv.remove(), 5000);
+    }
+
+    function clearErrors() {
+        const oldErr = document.querySelector('.card .error-toast');
+        if(oldErr) oldErr.remove();
+    }
+
+    // 核心处理：聚合数据，区分普通用户和匿名赞助者，统计匿名人数
+    function processCSVData(dataRows) {
+        const sampleRow = dataRows[0];
+        if (!sampleRow) throw new Error("CSV 无数据行");
+        const actualCols = Object.keys(sampleRow);
+        
+        let schemeCol = null, userCol = null, amountCol = null;
+        for (let col of actualCols) {
+            const clean = col.trim();
+            if (clean === '方案名称') schemeCol = col;
+            if (clean === '用户名') userCol = col;
+            if (clean === '金额') amountCol = col;
+        }
+        if (!schemeCol) schemeCol = actualCols.find(c => c.trim() === '方案名称');
+        if (!userCol) userCol = actualCols.find(c => c.trim() === '用户名');
+        if (!amountCol) amountCol = actualCols.find(c => c.trim() === '金额');
+        
+        if (!schemeCol || !userCol || !amountCol) {
+            throw new Error(`缺少必要列：需要「方案名称」「用户名」「金额」。实际列名: ${actualCols.join(', ')}`);
+        }
+        
+        // 存储每个方案的原始数据
+        const schemeRaw = new Map();
+        
+        for (const row of dataRows) {
+            let schemeName = row[schemeCol] ? String(row[schemeCol]).trim() : '';
+            if (schemeName === '') schemeName = '自选赞助';
+            
+            let username = row[userCol] ? String(row[userCol]).trim() : '';
+            let amountRaw = row[amountCol] !== undefined && row[amountCol] !== null ? String(row[amountCol]).trim() : '';
+            let amountNum = parseFloat(amountRaw);
+            if (username === '' || isNaN(amountNum) || amountNum <= 0) continue;
+            
+            if (!schemeRaw.has(schemeName)) {
+                schemeRaw.set(schemeName, {
+                    normalMap: new Map(),
+                    anonymousAmount: 0,
+                    anonymousCount: 0
+                });
+            }
+            const scheme = schemeRaw.get(schemeName);
+            
+            if (username.startsWith('爱发电用户')) {
+                scheme.anonymousAmount += amountNum;
+                scheme.anonymousCount += 1;
+            } else {
+                const prev = scheme.normalMap.get(username) || 0;
+                scheme.normalMap.set(username, prev + amountNum);
+            }
+        }
+        
+        if (schemeRaw.size === 0) throw new Error("未找到有效赞助记录");
+        
+        const processed = new Map();
+        for (const [schemeName, scheme] of schemeRaw.entries()) {
+            const normalUsers = [];
+            for (const [name, amt] of scheme.normalMap.entries()) {
+                normalUsers.push({ name, amount: amt });
+            }
+            normalUsers.sort((a, b) => b.amount - a.amount);
+            
+            const anonymousInfo = {
+                count: scheme.anonymousCount,
+                amount: scheme.anonymousAmount
+            };
+            const userCount = normalUsers.length + (scheme.anonymousCount > 0 ? 1 : 0);
+            const totalAmount = scheme.anonymousAmount + Array.from(scheme.normalMap.values()).reduce((s,v)=>s+v,0);
+            
+            processed.set(schemeName, {
+                totalAmount,
+                userCount,
+                anonymousCount: scheme.anonymousCount,
+                normalUsers,
+                anonymousInfo
+            });
+        }
+        return processed;
+    }
+    
+    // 渲染界面
+    function renderGroups(processedMap, fileName) {
+        if (processedMap.size === 0) {
+            resultContainer.innerHTML = `<div class="empty-row">⚠️ 没有匹配的有效赞助记录</div>`;
+            globalStatsDiv.style.display = 'none';
+            return;
+        }
+        let totalValidOrders = 0;
+        let globalTotalAmount = 0;
+        for (let scheme of processedMap.values()) {
+            totalValidOrders += scheme.userCount;
+            globalTotalAmount += scheme.totalAmount;
+        }
+        globalStatsDiv.style.display = 'flex';
+        document.getElementById('globalStats').innerHTML = `
+            <span>📄 文件名: ${escapeHtml(fileName)}</span>
+            <span>📋 有效方案数: ${processedMap.size}</span>
+            <span>👥 总赞助人次: ${totalValidOrders}</span>
+            <span>💰 总金额: ¥${globalTotalAmount.toFixed(2)}</span>
+        `;
+        
+        const sortedSchemes = Array.from(processedMap.keys()).sort();
+        let html = '';
+        for (const schemeName of sortedSchemes) {
+            const scheme = processedMap.get(schemeName);
+            const { totalAmount, userCount, anonymousCount, normalUsers, anonymousInfo } = scheme;
+            html += `
+                <div class="scheme-card" data-scheme="${escapeHtml(schemeName)}">
+                    <div class="scheme-header">
+                        <div>
+                            <span class="scheme-name">📌 ${escapeHtml(schemeName)}</span>
+                            <div style="font-size:0.7rem; margin-top:4px; color:#475569;">
+                                👥 ${userCount} 位赞助者 | 💰 总额 ¥${totalAmount.toFixed(2)}
+                                ${anonymousCount > 0 ? ` | 🕵️ 匿名赞助者 (共${anonymousCount}人)` : ''}
+                            </div>
+                        </div>
+                        <div class="export-buttons">
+                            <button class="btn-sm btn-primary-sm export-scheme-btn" data-scheme="${escapeHtml(schemeName)}">📄 逐个导出此方案的TXT文件</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="user-table">
+                            <thead><tr><th>#</th><th>用户名</th><th>赞助金额 (元)</th></thead>
+                            <tbody>
+            `;
+            let idx = 1;
+            for (const user of normalUsers) {
+                html += `<tr><td>${idx++}</td><td>${escapeHtml(user.name)}</td><td>¥ ${user.amount.toFixed(2)}</td></tr>`;
+            }
+            if (anonymousCount > 0) {
+                html += `<tr class="anonymous-row"><td>${idx}</td><td>匿名赞助者 (共${anonymousCount}人)</td><td>¥ ${anonymousInfo.amount.toFixed(2)}</td></tr>`;
+            }
+            html += `</tbody></table></div></div>`;
+        }
+        resultContainer.innerHTML = html;
+        
+        // 绑定每个方案的导出按钮事件
+        document.querySelectorAll('.export-scheme-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const schemeName = btn.getAttribute('data-scheme');
+                if (schemeName) exportSchemeFiles(schemeName);
+            });
+        });
+    }
+    
+    // 生成一个方案的所有分片文件信息 (返回 { filename, content } 数组) - 内容为 export default 格式
+    function generateSchemeChunks(schemeName, schemeData) {
+        const { normalUsers, anonymousCount } = schemeData;
+        // 名称列表：普通用户名称（按金额已排序）
+        const nameList = normalUsers.map(u => u.name);
+        let anonymousDisplayName = null;
+        if (anonymousCount > 0) {
+            anonymousDisplayName = `匿名赞助者 (共${anonymousCount}人)`;
+        }
+        
+        const chunkSize = 50;
+        const chunks = [];
+        for (let i = 0; i < nameList.length; i += chunkSize) {
+            chunks.push(nameList.slice(i, i + chunkSize));
+        }
+        // 匿名赞助者放在最后一个chunk的末尾
+        if (anonymousDisplayName) {
+            if (chunks.length === 0) {
+                chunks.push([anonymousDisplayName]);
+            } else {
+                const lastChunk = chunks[chunks.length - 1];
+                if (lastChunk.length < chunkSize) {
+                    lastChunk.push(anonymousDisplayName);
+                } else {
+                    chunks.push([anonymousDisplayName]);
+                }
+            }
+        }
+        
+        const files = [];
+        const safeBaseName = schemeName.replace(/[\\/:*?"<>|]/g, '_');
+        for (let i = 0; i < chunks.length; i++) {
+            const chunk = chunks[i];
+            // 构建 export default 数组字符串，每个元素用单引号包裹，缩进美观
+            const itemsStr = chunk.map(item => `    '${escapeJsString(item)}'`).join(',\n');
+            const content = `export default [\n${itemsStr}\n];\n`;
+            const filename = `${safeBaseName}名单${i+1}.txt`;
+            files.push({ filename, content });
+        }
+        return files;
+    }
+    
+    function escapeJsString(str) {
+        if (!str) return '';
+        // 转义反斜杠和单引号
+        return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
+    
+    // 下载单个文件
+    function downloadFile(filename, content, delayMs = 0) {
+        setTimeout(() => {
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }, delayMs);
+    }
+    
+    // 导出单个方案的所有分片（依次下载）
+    function exportSchemeFiles(schemeName) {
+        if (!currentProcessedData || currentProcessedData.size === 0) {
+            showError("没有已处理的数据");
+            return;
+        }
+        const schemeData = currentProcessedData.get(schemeName);
+        if (!schemeData) {
+            showError(`未找到方案「${schemeName}」`);
+            return;
+        }
+        const files = generateSchemeChunks(schemeName, schemeData);
+        if (files.length === 0) {
+            showError("该方案无有效赞助者");
+            return;
+        }
+        // 依次下载，间隔 500ms 避免浏览器拦截
+        files.forEach((file, index) => {
+            downloadFile(file.filename, file.content, index * 500);
+        });
+        showError(`✅ 开始下载 ${files.length} 个TXT文件，请稍等...（如被拦截请允许弹窗）`);
+    }
+    
+    // 导出所有方案的所有分片
+    function exportAllSchemes() {
+        if (!currentProcessedData || currentProcessedData.size === 0) {
+            showError("没有已处理的数据");
+            return;
+        }
+        const allFiles = [];
+        for (const [schemeName, schemeData] of currentProcessedData.entries()) {
+            const files = generateSchemeChunks(schemeName, schemeData);
+            allFiles.push(...files);
+        }
+        if (allFiles.length === 0) {
+            showError("没有可导出的文件");
+            return;
+        }
+        allFiles.forEach((file, index) => {
+            downloadFile(file.filename, file.content, index * 400);
+        });
+        showError(`✅ 共导出 ${allFiles.length} 个TXT文件，开始下载...（如浏览器拦截多个下载，请允许此站点弹出窗口）`);
+    }
+    
+    // 读取文件并解析
+    async function parseFileWithEncoding(file, encoding) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const arrayBuffer = e.target.result;
+                try {
+                    const decoder = new TextDecoder(encoding);
+                    let text = decoder.decode(arrayBuffer);
+                    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+                    Papa.parse(text, {
+                        header: true,
+                        skipEmptyLines: true,
+                        complete: (results) => {
+                            if (results.errors && results.errors.length) {
+                                console.warn("PapaParse warning", results.errors);
+                            }
+                            resolve(results.data);
+                        },
+                        error: (err) => reject(err)
+                    });
+                } catch (err) {
+                    reject(err);
+                }
+            };
+            reader.onerror = () => reject(new Error("文件读取失败"));
+            reader.readAsArrayBuffer(file);
+        });
+    }
+    
+    async function processCurrentFile() {
+        if (!currentRawFile) {
+            showError("请先选择一个CSV文件");
+            return;
+        }
+        clearErrors();
+        resultContainer.innerHTML = `<div class="empty-row">⏳ 正在以 ${encodingSelect.value} 编码解析，请稍候...</div>`;
+        try {
+            const encoding = encodingSelect.value;
+            const dataRows = await parseFileWithEncoding(currentRawFile, encoding);
+            if (!dataRows || dataRows.length === 0) throw new Error("解析后无数据行");
+            const processed = processCSVData(dataRows);
+            currentProcessedData = processed;
+            renderGroups(processed, currentRawFile.name);
+        } catch (err) {
+            console.error(err);
+            let detail = err.message;
+            if (detail.includes('缺少必要列')) detail += "。请检查CSV列名（方案名称、用户名、金额）及编码";
+            showError(`处理失败: ${detail}`);
+            resultContainer.innerHTML = `<div class="empty-row">❌ ${escapeHtml(detail)}</div>`;
+            globalStatsDiv.style.display = 'none';
+            currentProcessedData.clear();
+        }
+    }
+    
+    function handleFile(file) {
+        if (!file) return;
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (ext !== 'csv') {
+            showError("请上传 .csv 格式的文件");
+            return;
+        }
+        currentRawFile = file;
+        currentFileName = file.name;
+        processCurrentFile();
+    }
+    
+    function setupEvents() {
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.style.background = "#eef2ff";
+            uploadZone.style.borderColor = "#3b82f6";
+        });
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.style.background = "#f8fafd";
+            uploadZone.style.borderColor = "#cbd5e1";
+        });
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.style.background = "#f8fafd";
+            uploadZone.style.borderColor = "#cbd5e1";
+            const files = e.dataTransfer.files;
+            if (files.length) handleFile(files[0]);
+        });
+        uploadZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) handleFile(e.target.files[0]);
+            fileInput.value = '';
+        });
+        reparseBtn.addEventListener('click', () => {
+            if (currentRawFile) processCurrentFile();
+            else showError("没有已选中的文件，请先上传");
+        });
+        exportAllBtn.addEventListener('click', exportAllSchemes);
+    }
+    
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, (m) => {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
+    setupEvents();
+</script>
+</body>
+</html>

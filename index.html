@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🛠️ 我的工具箱</title>
+    <style>
+        /* ===================== 全局重置 & 基础 ===================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --sidebar-width: 280px;
+            --sidebar-bg: #1a1a2e;
+            --sidebar-hover: #16213e;
+            --accent: #4facfe;
+            --accent-hover: #3d8fd9;
+            --text-light: #e0e0e0;
+            --text-muted: #8892b0;
+            --border-color: #2a2a4a;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --radius: 12px;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        html,
+        body {
+            height: 100%;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f1a;
+            color: var(--text-light);
+            overflow: hidden;
+        }
+
+        /* ===================== 整体布局 ===================== */
+        .app {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            background: #0f0f1a;
+        }
+
+        /* ===================== 侧边栏 ===================== */
+        .sidebar {
+            width: var(--sidebar-width);
+            min-width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--sidebar-bg);
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-color);
+            position: relative;
+            z-index: 10;
+            transition: transform var(--transition);
+            overflow: hidden;
+        }
+
+        /* 侧边栏头部 */
+        .sidebar-header {
+            padding: 24px 20px 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header .logo {
+            font-size: 28px;
+            line-height: 1;
+        }
+
+        .sidebar-header .brand {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .sidebar-header .sub {
+            font-size: 12px;
+            color: var(--text-muted);
+            -webkit-text-fill-color: var(--text-muted);
+            background: none;
+            display: block;
+            margin-top: 2px;
+            font-weight: 400;
+        }
+
+        /* 工具列表容器 */
+        .tool-list-wrap {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 12px 20px;
+        }
+
+        .tool-list-wrap::-webkit-scrollbar {
+            width: 4px;
+        }
+        .tool-list-wrap::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .tool-list-wrap::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        /* 分类标题 */
+        .category-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            padding: 16px 12px 8px;
+            font-weight: 600;
+        }
+
+        /* 工具项 */
+        .tool-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 10px 14px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all var(--transition);
+            position: relative;
+            margin-bottom: 2px;
+            border: 1px solid transparent;
+            user-select: none;
+        }
+
+        .tool-item:hover {
+            background: rgba(79, 172, 254, 0.06);
+            border-color: rgba(79, 172, 254, 0.15);
+        }
+
+        .tool-item.active {
+            background: rgba(79, 172, 254, 0.12);
+            border-color: rgba(79, 172, 254, 0.25);
+            box-shadow: 0 0 20px rgba(79, 172, 254, 0.05);
+        }
+
+        .tool-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 28px;
+            background: var(--accent);
+            border-radius: 0 4px 4px 0;
+        }
+
+        .tool-item .icon {
+            font-size: 20px;
+            width: 32px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .tool-item .info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .tool-item .name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-light);
+            transition: color var(--transition);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tool-item .desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 1px;
+        }
+
+        .tool-item.active .name {
+            color: #fff;
+        }
+
+        /* 侧边栏底部 */
+        .sidebar-footer {
+            padding: 12px 20px;
+            border-top: 1px solid var(--border-color);
+            font-size: 12px;
+            color: var(--text-muted);
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-footer .badge {
+            background: rgba(79, 172, 254, 0.15);
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: var(--accent);
+        }
+
+        /* ===================== 主内容区 ===================== */
+        .main {
+            flex: 1;
+            height: 100vh;
+            background: #14141f;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 工具栏 - 顶部 */
+        .main-toolbar {
+            height: 52px;
+            background: rgba(26, 26, 46, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 5;
+        }
+
+        .main-toolbar .current-tool {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .main-toolbar .current-tool .icon {
+            font-size: 20px;
+        }
+
+        .main-toolbar .actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .main-toolbar .actions button {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .main-toolbar .actions button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+        }
+
+        /* iframe 容器 */
+        .iframe-container {
+            width: 100%;
+            height: calc(100vh - 52px);
+            background: #0a0a14;
+            position: relative;
+        }
+
+        .iframe-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #fff;
+            display: block;
+        }
+
+        /* 加载遮罩 */
+        .loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: #14141f;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+        }
+
+        .loading-spinner {
+            width: 44px;
+            height: 44px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .loading-overlay .tip {
+            margin-top: 16px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ===================== 移动端适配 ===================== */
+        .menu-toggle {
+            display: none;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-light);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .menu-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* 移动端侧边栏遮罩 */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 9;
+            opacity: 0;
+            transition: opacity var(--transition);
+        }
+
+        .sidebar-overlay.active {
+            opacity: 1;
+        }
+
+        /* ===================== 响应式 ===================== */
+        @media (max-width: 768px) {
+            :root {
+                --sidebar-width: 280px;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                transform: translateX(-100%);
+                box-shadow: var(--shadow);
+                border-right: none;
+                z-index: 10;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay {
+                display: block;
+            }
+
+            .menu-toggle {
+                display: inline-flex;
+            }
+
+            .main-toolbar .current-tool .name {
+                max-width: 120px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .main-toolbar .actions button span {
+                display: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .sidebar {
+                width: 100%;
+                min-width: unset;
+            }
+            .main-toolbar {
+                padding: 0 12px;
+            }
+            .main-toolbar .current-tool .name {
+                max-width: 80px;
+            }
+        }
+
+        /* ===================== 空状态 ===================== */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-muted);
+            gap: 12px;
+        }
+
+        .empty-state .big-icon {
+            font-size: 64px;
+            opacity: 0.6;
+        }
+        .empty-state h2 {
+            color: var(--text-light);
+            font-weight: 500;
+        }
+        .empty-state p {
+            font-size: 14px;
+            max-width: 360px;
+            text-align: center;
+            line-height: 1.6;
+        }
+        .empty-state code {
+            background: rgba(255, 255, 255, 0.06);
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app">
+        <!-- ====== 侧边栏遮罩（移动端） ====== 
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>-->
+
+        <!-- ====== 侧边栏 ====== -->
+        <aside class="sidebar" id="sidebar">
+            <!-- 头部 -->
+            <div class="sidebar-header">
+                <span class="logo">🛠️</span>
+                <div>
+                    <div class="brand">工具箱</div>
+                    <span class="sub">Tools Collection</span>
+                </div>
+            </div>
+
+            <!-- 工具列表 -->
+            <div class="tool-list-wrap" id="toolList">
+                <!-- 由 JS 动态渲染 -->
+            </div>
+
+            <!-- 底部 -->
+            <div class="sidebar-footer">
+                <span>v1.0 · 本地工具</span>
+                <span class="badge" id="toolCount">0 个工具</span>
+            </div>
+        </aside>
+
+        <!-- ====== 主区域 ====== -->
+        <main class="main">
+            <!-- 顶部工具栏 -->
+            <div class="main-toolbar">
+                <div class="current-tool">
+                    <button class="menu-toggle" id="menuToggle" aria-label="切换菜单">☰</button>
+                    <span class="icon" id="currentIcon">📦</span>
+                    <span class="name" id="currentName">请选择工具</span>
+                </div>
+                <div class="actions">
+                    <button id="refreshBtn" title="刷新当前工具">⟳ <span>刷新</span></button>
+                    <button id="fullscreenBtn" title="全屏">⛶ <span>全屏</span></button>
+                </div>
+            </div>
+
+            <!-- iframe 容器 -->
+            <div class="iframe-container" id="iframeContainer">
+                <!-- 加载遮罩 -->
+                <div class="loading-overlay" id="loadingOverlay">
+                    <div class="loading-spinner"></div>
+                    <div class="tip">加载中...</div>
+                </div>
+
+                <!-- iframe -->
+                <iframe id="toolFrame" src="about:blank" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads"></iframe>
+
+                <!-- 空状态（当没有工具时显示） -->
+                <div class="empty-state" id="emptyState" style="display:none;">
+                    <div class="big-icon">🧰</div>
+                    <h2>欢迎使用工具箱</h2>
+                    <p>
+                        请在 <code>tools</code> 数组中配置你的工具，
+                        或检查文件路径是否正确。
+                    </p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ================================================================
+        //  ★★★ 在这里配置你的工具 ★★★
+        //  格式：{ id, name, icon, description, path, category }
+        //  - id: 唯一标识（建议用英文）
+        //  - name: 显示名称
+        //  - icon: 表情符号或文字
+        //  - description: 简短描述（可选）
+        //  - path: HTML 文件路径（相对于当前页面）
+        //  - category: 分类名称（可选，用于分组）
+        // ================================================================
+        const tools = [{
+            id: 'CSV-Analysis',
+            name: 'CSV解析器',
+            icon: '📝',
+            description: '解析原始CSV数据',
+            path: 'text-processing/CSVAnalysis.html',
+            category: '文本处理'
+        }, {
+            id: 'List-Generator',
+            name: '赞助者名单生成器',
+            icon: '📱',
+            description: '生成爱发电赞助者名单',
+            path: 'text-processing/List-Generator.html',
+            category: '文本处理'
+        },{
+            id: 'Text-format-conversion',
+            name: '文本格式转换',
+            icon: '📄',
+            description: '英文符号替换，LaTeX语法转换',
+            path: 'text-processing/TextFormatConversion.html',
+            category: '文本处理'
+        },{
+            id: 'pdf-color',
+            name: 'PDF颜色反转',
+            icon: '🔀',
+            description: '将PDF文件颜色反转',
+            path: 'Image-processing/PDFColorInversion.html',
+            category: '图像处理'
+        }, {
+            id: 'image-color',
+            name: '图片颜色反转',
+            icon: '🖼️',
+            description: '颜色反转、二值化',
+            path: 'Image-processing/PictureColorInversion.html',
+            category: '图像处理'
+        },
+	    {
+            id: 'pdf-color-lab',
+            name: 'PDF颜色反转(实验内容)',
+            icon: '🔀',
+            description: '提供原始文本颜色反转',
+            path: 'Image-processing/PDFColorInversion-lab.html',
+            category: '实验室'
+        },
+        {
+            id: 'BicycleSpeedCalculation',
+            name: '公路车速度计算',
+            icon: '🚲',
+            description: '方便的齿比计算工具',
+            path: 'calculate-tools/BicycleSpeedCalculation.html',
+            category: '计算工具'
+        },
+	];
+
+        // ================================================================
+        //  以下代码为工具箱核心逻辑，一般无需修改
+        // ================================================================
+
+        // DOM 引用
+        const sidebar = document.getElementById('sidebar');
+        // const overlay = document.getElementById('sidebarOverlay');
+        const menuToggle = document.getElementById('menuToggle');
+        const toolList = document.getElementById('toolList');
+        const toolFrame = document.getElementById('toolFrame');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const emptyState = document.getElementById('emptyState');
+        const currentIcon = document.getElementById('currentIcon');
+        const currentName = document.getElementById('currentName');
+        const toolCount = document.getElementById('toolCount');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+        let currentToolId = null;
+        let isFirstLoad = true;
+
+        // ================================================================
+        //  1. 渲染工具列表
+        // ================================================================
+        function renderToolList() {
+            // 按分类分组
+            const groups = {};
+            tools.forEach(t => {
+                const cat = t.category || '其他工具';
+                if (!groups[cat]) groups[cat] = [];
+                groups[cat].push(t);
+            });
+
+            let html = '';
+            for (const [cat, items] of Object.entries(groups)) {
+                html += `<div class="category-title">${cat}</div>`;
+                items.forEach(t => {
+                    const active = t.id === currentToolId ? 'active' : '';
+                    html += `
+                        <div class="tool-item ${active}" data-id="${t.id}">
+                            <span class="icon">${t.icon || '🔧'}</span>
+                            <div class="info">
+                                <div class="name">${t.name}</div>
+                                ${t.description ? `<div class="desc">${t.description}</div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            toolList.innerHTML = html;
+            toolCount.textContent = `${tools.length} 个工具`;
+
+            // 绑定点击事件
+            document.querySelectorAll('.tool-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    const id = el.dataset.id;
+                    const tool = tools.find(t => t.id === id);
+                    if (tool) switchTool(tool);
+                    // 移动端关闭侧边栏
+                    closeSidebar();
+                });
+            });
+
+            // 如果有工具且没有选中，默认选中第一个
+            if (tools.length > 0 && !currentToolId) {
+                switchTool(tools[0]);
+            } else if (tools.length === 0) {
+                // 没有工具时显示空状态
+                emptyState.style.display = 'flex';
+                loadingOverlay.classList.add('hidden');
+                toolFrame.style.display = 'none';
+                currentName.textContent = '暂无工具';
+                currentIcon.textContent = '📭';
+            }
+        }
+
+        // ================================================================
+        //  2. 切换工具
+        // ================================================================
+        function switchTool(tool) {
+            if (!tool) return;
+            currentToolId = tool.id;
+
+            // 更新高亮
+            document.querySelectorAll('.tool-item').forEach(el => {
+                el.classList.toggle('active', el.dataset.id === tool.id);
+            });
+
+            // 更新顶栏
+            currentIcon.textContent = tool.icon || '🔧';
+            currentName.textContent = tool.name;
+
+            // 显示加载
+            loadingOverlay.classList.remove('hidden');
+            emptyState.style.display = 'none';
+            toolFrame.style.display = 'block';
+
+            // 加载 iframe
+            const src = tool.path || 'about:blank';
+            if (toolFrame.src !== src) {
+                toolFrame.src = src;
+            } else {
+                // 相同 URL 也刷新一下
+                toolFrame.contentWindow?.location.reload();
+            }
+
+            // 更新标题
+            document.title = `${tool.name} · 工具箱`;
+        }
+
+        // ================================================================
+        //  3. iframe 加载完成
+        // ================================================================
+        toolFrame.addEventListener('load', () => {
+            loadingOverlay.classList.add('hidden');
+            if (isFirstLoad) {
+                isFirstLoad = false;
+                // 第一次加载完成后，如果有工具且没有选中，选第一个
+                if (tools.length > 0 && !currentToolId) {
+                    switchTool(tools[0]);
+                }
+            }
+        });
+
+        // 如果 iframe 加载失败（如文件不存在），仍然隐藏加载遮罩
+        toolFrame.addEventListener('error', () => {
+            loadingOverlay.classList.add('hidden');
+        });
+
+        // ================================================================
+        //  4. 侧边栏控制（移动端）
+        // ================================================================
+        function openSidebar() {
+            sidebar.classList.add('open');
+            // overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            // overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        menuToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (sidebar.classList.contains('open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
+
+        // overlay.addEventListener('click', closeSidebar);
+
+        // 窗口大小变化时，如果从移动端变为桌面，关闭侧边栏
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768 && sidebar.classList.contains('open')) {
+                closeSidebar();
+            }
+        });
+
+        // ================================================================
+        //  5. 顶部操作按钮
+        // ================================================================
+        // 刷新
+        refreshBtn.addEventListener('click', () => {
+    const iframe = toolFrame;
+    if (iframe.src && iframe.src !== 'about:blank') {
+        loadingOverlay.classList.remove('hidden');
+        // 方法1：直接重新设置 src（会触发页面刷新，且无跨域问题）
+        iframe.src = iframe.src;
+        // 如果希望强制刷新（避免缓存），可以加时间戳：
+        // iframe.src = iframe.src.split('?')[0] + '?t=' + Date.now();
+
+        setTimeout(() => {
+            loadingOverlay.classList.add('hidden');
+        }, 3000);
+    }
+});
+
+        // 全屏
+        fullscreenBtn.addEventListener('click', () => {
+            const container = document.getElementById('iframeContainer');
+            if (!document.fullscreenElement) {
+                container.requestFullscreen?.() || container.webkitRequestFullscreen?.();
+            } else {
+                document.exitFullscreen?.() || document.webkitExitFullscreen?.();
+            }
+        });
+
+        // 监听全屏变化，更新按钮文字
+        document.addEventListener('fullscreenchange', updateFullscreenBtn);
+        document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
+
+        function updateFullscreenBtn() {
+            const isFull = !!document.fullscreenElement;
+            fullscreenBtn.innerHTML = isFull ? '⛶ <span>退出</span>' : '⛶ <span>全屏</span>';
+        }
+
+        // ================================================================
+        //  6. 键盘快捷键
+        // ================================================================
+        document.addEventListener('keydown', (e) => {
+            // Ctrl + 1-9 快速切换工具（最多9个）
+            if (e.ctrlKey && e.key >= '1' && e.key <= '9') {
+                const idx = parseInt(e.key) - 1;
+                if (idx < tools.length) {
+                    e.preventDefault();
+                    switchTool(tools[idx]);
+                    closeSidebar();
+                }
+            }
+            // ESC 关闭侧边栏
+            if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+                closeSidebar();
+            }
+            // Ctrl + R 刷新（仅当焦点不在输入框时）
+            if (e.ctrlKey && e.key === 'r' && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
+                e.preventDefault();
+                refreshBtn.click();
+            }
+        });
+
+        // ================================================================
+        //  7. 初始化
+        // ================================================================
+        renderToolList();
+
+        // 如果工具列表不为空，默认选中第一个
+        if (tools.length > 0) {
+            // 但等待 iframe 加载完成后再切换，避免闪烁
+            // 实际上 switchTool 会在 iframe load 时调用
+            // 但为了更早显示，我们可以直接调用
+            setTimeout(() => {
+                if (!currentToolId && tools.length > 0) {
+                    switchTool(tools[0]);
+                }
+            }, 100);
+        } else {
+            // 没有工具，显示空状态
+            emptyState.style.display = 'flex';
+            loadingOverlay.classList.add('hidden');
+            toolFrame.style.display = 'none';
+        }
+
+        // 控制台提示
+        console.log('🛠️ 工具箱已启动！');
+        console.log(`📦 共加载 ${tools.length} 个工具`);
+        console.log('💡 提示: 按 Ctrl+1~9 快速切换工具');
+        console.log('📝 在 tools 数组中配置你的工具列表');
+    </script>
+</body>
+</html>
