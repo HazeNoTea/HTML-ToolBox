@@ -244,6 +244,156 @@
             font-size: 0.8rem;
         }
 
+        /* 文件重命名输入框 */
+        .rename-input {
+            background: #0f111a;
+            border: 1px solid #3a4a66;
+            color: #eef4ff;
+            border-radius: 40px;
+            padding: 6px 16px;
+            font-size: 0.8rem;
+            min-width: 160px;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        .rename-input::placeholder {
+            color: #6c7a96;
+        }
+
+        .rename-input:focus {
+            border-color: #3a86ff;
+            box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.25);
+        }
+
+        /* 阈值 + 填充颜色 垂直堆叠 */
+        .control-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* 颜色填充字段 */
+        .color-field {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #0f111a;
+            border-radius: 40px;
+            padding: 3px 8px 3px 12px;
+        }
+
+        .color-label {
+            font-size: 0.75rem;
+            color: #9aaec5;
+        }
+
+        .color-text-input {
+            width: 84px;
+            background: transparent;
+            border: none;
+            color: #eef4ff;
+            font-size: 0.78rem;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .color-picker {
+            width: 26px;
+            height: 26px;
+            padding: 0;
+            border: 1px solid #3a4a66;
+            border-radius: 50%;
+            background: none;
+            cursor: pointer;
+        }
+
+        .color-picker::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        .color-picker::-webkit-color-swatch {
+            border: none;
+            border-radius: 50%;
+        }
+
+        .color-field input:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        /* 当前正在编辑的颜色字段高亮 */
+        .color-field.active {
+            box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.45);
+        }
+
+        /* 调色板 */
+        .palette-slots {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .palette-slot {
+            position: relative;
+            width: 26px;
+            height: 26px;
+            padding: 0;
+            border-radius: 50%;
+            border: 1px dashed #3a4a66;
+            background: transparent;
+            cursor: pointer;
+            color: #6c7a96;
+            font-size: 15px;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.15s;
+        }
+
+        .palette-slot:hover {
+            border-color: #3a86ff;
+            color: #9ec5ff;
+            transform: scale(1.12);
+        }
+
+        .palette-slot.filled {
+            border: 1px solid #3a4a66;
+        }
+
+        .palette-slot.filled:hover {
+            border-color: #3a86ff;
+        }
+
+        /* 已填充色块的删除按钮（悬停显示） */
+        .palette-slot .slot-del {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #ff4d4d;
+            color: #fff;
+            font-size: 11px;
+            line-height: 14px;
+            text-align: center;
+            display: none;
+            font-weight: 700;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        }
+
+        .palette-slot.filled:hover .slot-del {
+            display: block;
+        }
+
+        .palette-tip {
+            font-size: 0.7rem;
+            color: #6c7ea0;
+        }
+
         .threshold-value {
             font-weight: 600;
             background: #0f111a;
@@ -327,10 +477,30 @@
                 </label>
             </div>
         </div>
-        <div class="control-group">
-            <span>🎚️ 阈值 (0~255)</span>
-            <input type="range" id="thresholdSlider" min="0" max="255" step="1" value="128" disabled>
-            <span id="thresholdValue" class="threshold-value">128</span>
+        <div class="control-stack">
+            <div class="control-group">
+                <span>🎚️ 阈值 (0~255)</span>
+                <input type="range" id="thresholdSlider" min="0" max="255" step="1" value="128" disabled>
+                <span id="thresholdValue" class="threshold-value">128</span>
+            </div>
+            <div class="control-group" id="colorFillGroup">
+                <span>🎨 二值化填充</span>
+                <div class="color-field">
+                    <span class="color-label">黑</span>
+                    <input type="text" id="blackFillText" class="color-text-input" value="#000000" maxlength="7" autocomplete="off" disabled>
+                    <input type="color" id="blackFillColor" class="color-picker" value="#000000" title="原本为黑色的区域填充色" disabled>
+                </div>
+                <div class="color-field">
+                    <span class="color-label">白</span>
+                    <input type="text" id="whiteFillText" class="color-text-input" value="#ffffff" maxlength="7" autocomplete="off" disabled>
+                    <input type="color" id="whiteFillColor" class="color-picker" value="#ffffff" title="原本为白色的区域填充色" disabled>
+                </div>
+            </div>
+            <div class="control-group" id="paletteGroup">
+                <span>🎨 调色板</span>
+                <div class="palette-slots" id="paletteSlots"></div>
+                <span class="palette-tip">点空位存色 · 点色块取用</span>
+            </div>
         </div>
         <div class="control-group">
             <span>📸 输出格式</span>
@@ -344,6 +514,10 @@
             <span>📀 JPEG 质量</span>
             <input type="range" id="jpegQuality" min="0.6" max="1.0" step="0.02" value="0.92">
             <span id="qualityValue">92%</span>
+        </div>
+        <div class="control-group">
+            <span>🏷️ 文件重命名</span>
+            <input type="text" id="renameInput" class="rename-input" placeholder="留空则用原文件名" autocomplete="off">
         </div>
     </div>
 
@@ -366,7 +540,9 @@
     <div class="footer-note">
         💡 根据两个开关组合决定最终效果：<br>
         • 仅反色 → 负片效果 &nbsp;&nbsp; • 仅二值化 → 黑白阈值 &nbsp;&nbsp; • 两者都开 → 先反色再二值化 (黑白互换)<br>
-        🎛️ 阈值只影响二值化；输出格式、JPEG质量仅对下载生效。
+        🎛️ 阈值只影响二值化；输出格式、JPEG质量仅对下载生效。<br>
+        🎨 填充颜色仅当「二值化」开启时可用：把二值化后原本纯黑/纯白的区域替换为自定义颜色（支持 #ffffff 等代码，或使用取色器）。<br>
+        🎨 调色板可保存 10 个常用色：先点选「黑」或「白」字段，再点空位「＋」存色；之后点色块即可快速套用，悬停色块右上角「×」可删除（本地保存，下次打开仍在）。
     </div>
 </div>
 
@@ -388,22 +564,32 @@
         const jpegQualitySlider = document.getElementById('jpegQuality');
         const qualityValueSpan = document.getElementById('qualityValue');
         const effectHintSpan = document.getElementById('effectHint');
+        const renameInput = document.getElementById('renameInput');
+        const colorFillGroup = document.getElementById('colorFillGroup');
+        const blackFillText = document.getElementById('blackFillText');
+        const blackFillColor = document.getElementById('blackFillColor');
+        const whiteFillText = document.getElementById('whiteFillText');
+        const whiteFillColor = document.getElementById('whiteFillColor');
+        const paletteSlots = document.getElementById('paletteSlots');
+        const paletteGroup = document.getElementById('paletteGroup');
 
         // 状态变量
         let originalImage = null;          // HTMLImageElement 原图
         let originalFile = null;            // 原始文件对象
         let currentResultCanvas = null;      // 当前组合效果生成的canvas
 
-        // 辅助：更新阈值滑块禁用状态（二值化未启用时禁用滑块）
+        // 辅助：更新阈值滑块与填充色输入框的禁用状态（二值化未启用时禁用）
         function updateThresholdSliderState() {
             const binaryEnabled = binaryToggle.checked;
             thresholdSlider.disabled = !binaryEnabled;
-            if (!binaryEnabled) {
-                // 视觉上淡化，但保留数值
-                thresholdSlider.style.opacity = '0.5';
-            } else {
-                thresholdSlider.style.opacity = '1';
-            }
+            // 视觉上淡化，但保留数值
+            thresholdSlider.style.opacity = binaryEnabled ? '1' : '0.5';
+
+            // 填充颜色输入框 / 取色器 同步启用状态
+            [blackFillText, blackFillColor, whiteFillText, whiteFillColor].forEach(el => {
+                el.disabled = !binaryEnabled;
+            });
+            colorFillGroup.style.opacity = binaryEnabled ? '1' : '0.6';
         }
 
         // 监听开关变化时更新滑块状态
@@ -433,7 +619,180 @@
         });
         toggleJpegQuality();
 
+        // 颜色填充：文本输入框 <-> 取色器 双向同步
+        function bindColorField(textEl, colorEl) {
+            textEl.addEventListener('input', () => {
+                const rgb = hexToRgb(textEl.value);
+                if (rgb) {
+                    colorEl.value = rgbToHex(rgb);
+                    textEl.style.color = '#eef4ff';
+                    refreshResult();
+                } else {
+                    // 输入暂不合法：红色提示，不影响当前预览
+                    textEl.style.color = '#ff6b6b';
+                }
+            });
+            textEl.addEventListener('blur', () => {
+                const rgb = hexToRgb(textEl.value);
+                if (!rgb) {
+                    // 失焦仍不合法：回退为取色器当前值
+                    textEl.value = colorEl.value;
+                } else {
+                    textEl.value = rgbToHex(rgb);
+                }
+                textEl.style.color = '#eef4ff';
+                refreshResult();
+            });
+            colorEl.addEventListener('input', () => {
+                textEl.value = colorEl.value;
+                textEl.style.color = '#eef4ff';
+                refreshResult();
+            });
+        }
+        bindColorField(blackFillText, blackFillColor);
+        bindColorField(whiteFillText, whiteFillColor);
+
+        // ---------- 调色板（最多保存 10 个颜色，localStorage 持久化） ----------
+        const PALETTE_KEY = 'pictureColorInversion.palette';
+        const PALETTE_SIZE = 10;
+        let palette = new Array(PALETTE_SIZE).fill(null);
+        let activeField = 'black'; // 当前正在编辑的颜色字段：'black' | 'white'
+
+        // 读取本地保存的调色板
+        function loadPalette() {
+            try {
+                const raw = localStorage.getItem(PALETTE_KEY);
+                if (!raw) return;
+                const arr = JSON.parse(raw);
+                if (!Array.isArray(arr)) return;
+                palette = new Array(PALETTE_SIZE).fill(null).map((_, i) => {
+                    const rgb = hexToRgb(arr[i]);
+                    return rgb ? rgbToHex(rgb) : null;
+                });
+            } catch (e) {
+                // localStorage 不可用或数据损坏时，退回空调色板
+                palette = new Array(PALETTE_SIZE).fill(null);
+            }
+        }
+
+        // 写入本地保存
+        function savePalette() {
+            try {
+                localStorage.setItem(PALETTE_KEY, JSON.stringify(palette));
+            } catch (e) {
+                // 忽略写入失败（如隐私模式/file:// 限制）
+            }
+        }
+
+        // 取得某个字段当前的颜色（标准化为 #rrggbb）
+        function currentFieldColor(field) {
+            const textEl = field === 'white' ? whiteFillText : blackFillText;
+            const pickerEl = field === 'white' ? whiteFillColor : blackFillColor;
+            const rgb = hexToRgb(textEl.value);
+            return rgb ? rgbToHex(rgb) : pickerEl.value;
+        }
+
+        // 将颜色应用到某个字段并刷新预览
+        function applyColorToField(field, hex) {
+            const textEl = field === 'white' ? whiteFillText : blackFillText;
+            const pickerEl = field === 'white' ? whiteFillColor : blackFillColor;
+            textEl.value = hex;
+            pickerEl.value = hex;
+            textEl.style.color = '#eef4ff';
+            refreshResult();
+        }
+
+        // 设置当前激活字段（用于高亮 & 调色板取/存的目标）
+        function setActiveField(field) {
+            activeField = field;
+            document.querySelectorAll('.color-field').forEach(el => el.classList.remove('active'));
+            const wrapper = (field === 'white' ? whiteFillText : blackFillText).closest('.color-field');
+            if (wrapper) wrapper.classList.add('active');
+        }
+
+        // 渲染 10 个色块
+        function renderPalette() {
+            paletteSlots.innerHTML = '';
+            palette.forEach((color, idx) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'palette-slot' + (color ? ' filled' : '');
+                if (color) {
+                    btn.style.background = color;
+                    btn.title = `${color} · 点击应用到当前字段`;
+                    const del = document.createElement('span');
+                    del.className = 'slot-del';
+                    del.textContent = '×';
+                    del.title = '删除该颜色';
+                    del.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        palette[idx] = null;
+                        savePalette();
+                        renderPalette();
+                    });
+                    btn.appendChild(del);
+                } else {
+                    btn.textContent = '+';
+                    btn.title = '点击将当前字段的颜色存入此处';
+                }
+                btn.addEventListener('click', () => onPaletteSlotClick(idx));
+                paletteSlots.appendChild(btn);
+            });
+        }
+
+        function onPaletteSlotClick(idx) {
+            if (palette[idx]) {
+                // 已存色：应用到当前激活字段
+                applyColorToField(activeField, palette[idx]);
+            } else {
+                // 空位：保存当前激活字段的颜色
+                palette[idx] = currentFieldColor(activeField);
+                savePalette();
+                renderPalette();
+            }
+        }
+
+        // 激活字段跟随焦点 / 点击
+        blackFillText.addEventListener('focus', () => setActiveField('black'));
+        whiteFillText.addEventListener('focus', () => setActiveField('white'));
+        blackFillColor.addEventListener('focus', () => setActiveField('black'));
+        whiteFillColor.addEventListener('focus', () => setActiveField('white'));
+        [blackFillText, blackFillColor].forEach(el =>
+            el.closest('.color-field').addEventListener('click', () => setActiveField('black')));
+        [whiteFillText, whiteFillColor].forEach(el =>
+            el.closest('.color-field').addEventListener('click', () => setActiveField('white')));
+
         // ---------- 核心图像处理函数 ----------
+        // 解析颜色代码 (#rgb / #rrggbb / rgb / rrggbb) -> {r,g,b}，失败返回 null
+        function hexToRgb(input) {
+            if (!input) return null;
+            let hex = String(input).trim().replace(/^#/, '');
+            if (/^[0-9a-fA-F]{3}$/.test(hex)) {
+                hex = hex.split('').map(ch => ch + ch).join('');
+            }
+            if (!/^[0-9a-fA-F]{6}$/.test(hex)) return null;
+            return {
+                r: parseInt(hex.slice(0, 2), 16),
+                g: parseInt(hex.slice(2, 4), 16),
+                b: parseInt(hex.slice(4, 6), 16)
+            };
+        }
+
+        // {r,g,b} -> #rrggbb
+        function rgbToHex(rgb) {
+            return '#' + [rgb.r, rgb.g, rgb.b]
+                .map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0'))
+                .join('');
+        }
+
+        // 获取当前 黑/白 填充色（解析失败则回退默认黑白）
+        function getFillColors() {
+            return {
+                black: hexToRgb(blackFillText.value) || { r: 0, g: 0, b: 0 },
+                white: hexToRgb(whiteFillText.value) || { r: 255, g: 255, b: 255 }
+            };
+        }
+
         // 将原图应用反色 (返回canvas)
         function applyInvert(imgElement) {
             const canvas = document.createElement('canvas');
@@ -453,7 +812,10 @@
         }
 
         // 将图像canvas/Image 二值化 (基于灰度 + 阈值)，返回canvas
-        function applyBinary(source, threshold) {
+        // blackRGB / whiteRGB: 原本为黑/白的区域分别填充的颜色
+        function applyBinary(source, threshold, blackRGB, whiteRGB) {
+            const black = blackRGB || { r: 0, g: 0, b: 0 };
+            const white = whiteRGB || { r: 255, g: 255, b: 255 };
             // source 可以是 Image 或 canvas
             const canvas = document.createElement('canvas');
             let width, height;
@@ -477,17 +839,17 @@
                 const g = data[i+1];
                 const b = data[i+2];
                 const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-                const value = gray >= threshold ? 255 : 0;
-                data[i] = value;
-                data[i+1] = value;
-                data[i+2] = value;
+                const fill = gray >= threshold ? white : black;
+                data[i] = fill.r;
+                data[i+1] = fill.g;
+                data[i+2] = fill.b;
             }
             ctx.putImageData(imageData, 0, 0);
             return canvas;
         }
 
         // 组合效果: 根据开关顺序 (先反色，再二值化)
-        function generateCombinedEffect(imgElement, invertEnabled, binaryEnabled, threshold) {
+        function generateCombinedEffect(imgElement, invertEnabled, binaryEnabled, threshold, blackRGB, whiteRGB) {
             if (!imgElement) return null;
             let intermediate = null;
             // 1. 如果需要反色，先生成反色canvas
@@ -504,7 +866,7 @@
             }
             // 2. 如果需要二值化，对intermediate进行二值化
             if (binaryEnabled) {
-                const binaryResult = applyBinary(intermediate, threshold);
+                const binaryResult = applyBinary(intermediate, threshold, blackRGB, whiteRGB);
                 return binaryResult;
             } else {
                 return intermediate;
@@ -527,8 +889,11 @@
             let threshold = parseInt(thresholdSlider.value, 10);
             if (isNaN(threshold)) threshold = 128;
 
+            // 二值化填充色（仅二值化启用时生效）
+            const fillColors = getFillColors();
+
             // 生成最终 canvas
-            const resultCanvas = generateCombinedEffect(originalImage, invert, binary, threshold);
+            const resultCanvas = generateCombinedEffect(originalImage, invert, binary, threshold, fillColors.black, fillColors.white);
             if (!resultCanvas) {
                 resultBox.innerHTML = '<div class="placeholder">处理失败</div>';
                 currentResultCanvas = null;
@@ -590,7 +955,13 @@
                 else if (invertOn) suffix = '反色';
                 else if (binaryOn) suffix = `二值化_阈值${thresholdSlider.value}`;
                 else suffix = '原图';
-                a.download = `${baseName}_${suffix}.${extension}`;
+                // 自定义重命名：优先使用输入框内容（自动补后缀），留空则用 原文件名_处理后缀
+                const customName = renameInput.value.trim().replace(/[\\/:*?"<>|]/g, '_');
+                if (customName) {
+                    a.download = `${customName}.${extension}`;
+                } else {
+                    a.download = `${baseName}_${suffix}.${extension}`;
+                }
                 a.href = url;
                 document.body.appendChild(a);
                 a.click();
@@ -687,6 +1058,9 @@
 
         // 初始化状态
         updateThresholdSliderState();
+        loadPalette();
+        renderPalette();
+        setActiveField('black');
         resetUI();
     })();
 </script>
